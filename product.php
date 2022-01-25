@@ -15,9 +15,7 @@
 </head>
 <body>
 <div class="container mt-5">
-    <div class="row post-list">
-
-    </div>
+    <div class="row post-list"></div>
 </div>
 <script type="module" src="js/index.js"></script>
 </body>
