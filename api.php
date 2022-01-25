@@ -24,11 +24,11 @@ router('/api/product', 'POST', function () {
 });
 
 router('/api/product/(\d+)', 'PUT', function (...$args) {
-    update($args[1]);
+    updateProduct($args[1]);
 });
 
-router('/api/games/(\d+)', 'DELETE', function (...$args) {
-    echo ' удалить игрушку: ', $args[1];
+router('/api/product/(\d+)', 'DELETE', function (...$args) {
+    deleteProduct($args[1]);
 });
 
 header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');

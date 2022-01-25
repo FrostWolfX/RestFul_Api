@@ -37,18 +37,16 @@ class Products
         if (property_exists($this, $name)) {
             switch ($rp->getType()->getName()):
                 case 'int':
-                    if (is_numeric($value)) {
-                        $this->$name = (int)$value;
-                    } else {
-                        throw new \Exception("Property '{$name}' don't have a right type data");
-                    }
+                    match (is_numeric($value)) {
+                        true => $this->$name = (int)$value,
+                        false => throw new \Exception("Property '{$name}' don't have a right type data")
+                    };
                     break;
                 default:
-                    if ($rp->getType()->getName() === get_debug_type($value)) {
-                        $this->$name = $value;
-                    } else {
-                        throw new \Exception("Property '{$name}' don't have a right type data");
-                    }
+                    match ($rp->getType()->getName() === get_debug_type($value)) {
+                        true => $this->$name = $value,
+                        false => throw new \Exception("Property '{$name}' don't have a right type data")
+                    };
             endswitch;
         } else {
             throw new \Exception("Property '{$name}' not found");
@@ -73,51 +71,43 @@ class Products
     public function products(): array
     {
         $productsArr = [];
-        $productsArr['records'] = [];
-        try {
-            //получение списка
-            $query = "
+        $productsItem = [];
+        //получение списка
+        $query = "
                 SELECT
                     p.id, p.name, p.description, p.price, p.category_id, p.created, p.modified
                 FROM {$this->tableName} AS p
                 ORDER BY p.id DESC
                 LIMIT 30
             ";
-            //подготовка запроса
-            $request = $this->connect->prepare($query);
-            //выполнение запроса
-            $request->execute();
+        //подготовка запроса
+        $request = $this->connect->prepare($query);
+        //выполнение запроса
+        $request->execute();
 
-            $num = $request->rowCount();
-            //проверка найдено ли больше 0 записей
-            if ($num > 0) {
-                //получение содержимое таблицы
-                // fetch() быстрее, чем fetchAll()
-                while ($row = $request->fetch(\PDO::FETCH_ASSOC)) {
-                    foreach ($row as $columnName => $value) {
-                        $productsItem[$columnName] = $value;
-                    }
-                    $productsArr['records'][] = $productsItem;
+        $num = $request->rowCount();
+        //проверка найдено ли больше 0 записей
+        if ($num > 0) {
+            //получение содержимое таблицы
+            // fetch() быстрее, чем fetchAll()
+            while ($row = $request->fetch(\PDO::FETCH_ASSOC)) {
+                foreach ($row as $columnName => $value) {
+                    $productsItem[$columnName] = $value;
                 }
+                $productsArr[] = $productsItem;
             }
-
-            return $productsArr;
-
-        } catch (\Exception $exception) {
-            throw new \Exception($exception->getMessage());
         }
+
+        return $productsArr;
+
     }
 
-    public function product($id = 0)
+    public function product(): array
     {
         $productsArr = [];
-        $productsArr['records'] = [];
-        $id = isset($id) ? (int)($id ?? 0) : 0;
-        try {
-            //получение товара по id
-            if ($id) {
-                // запрос для чтения одной записи (товара)
-                $query = "
+        $productsItem = [];
+        // запрос для чтения одной записи (товара)
+        $query = "
                     SELECT
                         p.id, p.name, p.description, p.price, p.category_id, p.created, p.modified
                     FROM {$this->tableName} AS p
@@ -125,40 +115,26 @@ class Products
                     LIMIT 1
                 ";
 
-                //подготовка запроса
-                $request = $this->connect->prepare($query);
-                // привязываем id callCenter, который будет обновлен
-                $request->bindParam(1, $id);
-                //выполнение запроса
-                $request->execute();
+        //подготовка запроса
+        $request = $this->connect->prepare($query);
+        // привязываем id callCenter, который будет обновлен
+        $request->bindParam(1, $this->id);
+        //выполнение запроса
+        $request->execute();
 
-                $num = $request->rowCount();
+        $num = $request->rowCount();
 
-                //проверка найдено ли больше 0 записей
-                if ($num > 0) {
-                    //получение содержимое таблицы
-                    while ($row = $request->fetch(\PDO::FETCH_ASSOC)) {
-                        foreach ($row as $columnName => $value) {
-                            $productsItem[$columnName] = $value;
-                        }
-                        $productsArr['records'][] = $productsItem;
-                    }
-                    //устанавливаем код ответа - 200 ОК
-                    http_response_code(200);
-                    echo json_encode(['status' => true, 'body' => $productsArr]);
-                } else {
-                    http_response_code(404);
-                    echo json_encode(['status' => false, 'body' => "Товар id = {$id} не найден"]);
+        //проверка найдено ли больше 0 записей
+        if ($num > 0) {
+            //получение содержимое таблицы
+            while ($row = $request->fetch(\PDO::FETCH_ASSOC)) {
+                foreach ($row as $columnName => $value) {
+                    $productsItem[$columnName] = $value;
                 }
-
-            } else {
-                http_response_code(404);
-                echo json_encode(['status' => false, 'body' => "Товара с id = {$id} не существует"]);
+                $productsArr = $productsItem;
             }
-        } catch (\Exception $exception) {
-            http_response_code(404);
-            echo json_encode(['status' => false, 'body' => (throw new \Exception($exception->getMessage()))]);
         }
+        return $productsArr;
     }
 
     /**
@@ -236,6 +212,25 @@ class Products
             return true;
         }
 
+        return false;
+    }
+
+    public function delete(): bool
+    {
+        $query = "
+            DELETE FROM {$this->tableName} WHERE id = :id
+        ";
+
+        $query = $this->connect->prepare($query);
+        //clear
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        //bind value
+        $query->bindParam(':id', $this->id);
+
+        //start query DB
+        if ($query->execute()) {
+            return true;
+        }
         return false;
     }
 }

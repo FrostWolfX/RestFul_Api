@@ -5,7 +5,11 @@ use api\config\Database;
 require_once __DIR__ . '/../../Autoload.php';
 Autoload::register();
 
-header("Content-Type: application/json; charset=utf8");
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 function getProducts()
 {
@@ -31,7 +35,7 @@ function getProducts()
     }
 }
 
-function getProduct($id)
+function getProduct(int $id)
 {
     header("Content-Type: application/json; charset=utf8");
     $database = new Database();
@@ -40,8 +44,16 @@ function getProduct($id)
         //Проверка, что объект является PDO
         if ($dbConnect instanceof PDO) {
             $productsObj = new \api\products\Products($dbConnect);
+            $productsObj->id = $id;
             //запрашиваем данные
-            $productsObj->product($id);
+            $product = $productsObj->product();
+            if ($product) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'message' => $product]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['status' => false, 'message' => "Товар id = {$productsObj->id} не найден"]);
+            }
         } else {
             http_response_code(404);
             echo json_encode(['status' => false, 'message' => 'Не удалось соединиться к DB']);
@@ -95,7 +107,7 @@ function createProduct()
     }
 }
 
-function update(int $id)
+function updateProduct(int $id)
 {
     $database = new Database();
     try {
@@ -120,6 +132,29 @@ function update(int $id)
             }
         }
     } catch (Exception $exception) {
+        http_response_code(404);
+        echo json_encode(['status' => false, 'message' => $exception->getMessage()]);
+    }
+}
+
+function deleteProduct(int $id)
+{
+    $database = new Database();
+    try {
+        $dbConnect = $database->getConnection();
+        if ($dbConnect instanceof PDO) {
+            $product = new \api\products\Products($dbConnect);
+            $product->id = $id;
+
+            if($product->delete()) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'message' => 'Товар был удален'], JSON_UNESCAPED_UNICODE);
+            } else {
+                http_response_code(503);
+                echo json_encode(['status' => false, 'message' => 'Не удалось удалить товар.']);
+            }
+        }
+    }catch (Exception $exception) {
         http_response_code(404);
         echo json_encode(['status' => false, 'message' => $exception->getMessage()]);
     }
