@@ -20,11 +20,11 @@ router('/api/product/(\d+)', 'GET', function (...$args) {
 });
 
 router('/api/product', 'POST', function () {
-    addNewProduct();
+    createProduct();
 });
 
-router('/api/games/(\d+)', 'PUT', function (...$args) {
-    echo 'обновить существующую игрушку: ', $args[1];
+router('/api/product/(\d+)', 'PUT', function (...$args) {
+    update($args[1]);
 });
 
 router('/api/games/(\d+)', 'DELETE', function (...$args) {
