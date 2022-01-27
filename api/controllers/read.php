@@ -146,7 +146,7 @@ function deleteProduct(int $id)
             $product = new \api\products\Products($dbConnect);
             $product->id = $id;
 
-            if($product->delete()) {
+            if ($product->delete()) {
                 http_response_code(200);
                 echo json_encode(['status' => true, 'message' => 'Товар был удален'], JSON_UNESCAPED_UNICODE);
             } else {
@@ -154,7 +154,7 @@ function deleteProduct(int $id)
                 echo json_encode(['status' => false, 'message' => 'Не удалось удалить товар.']);
             }
         }
-    }catch (Exception $exception) {
+    } catch (Exception $exception) {
         http_response_code(404);
         echo json_encode(['status' => false, 'message' => $exception->getMessage()]);
     }
